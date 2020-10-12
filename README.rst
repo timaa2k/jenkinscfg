@@ -20,13 +20,13 @@ Setup
 .. code-block:: bash
 
    mkdir -p ~/.virtualenv
-   python3 -m venv ~/.virtualenv/economy-beat
+   python3 -m venv ~/.virtualenv/jenkinscfg
 
 2) Activate virtual environment
 
 .. code-block:: bash
 
-   source ~/.virtualenv/economy-beat/bin/activate
+   source ~/.virtualenv/jenkinscfg/bin/activate
 
 3) Install Python packages required for development
 
