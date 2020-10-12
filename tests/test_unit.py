@@ -7,6 +7,10 @@ import jenkins
 from jenkinscfg import cli
 
 
+SERVER_JOBS = {'s': 'a', 's/n': 'b', 't': 'c'}
+LOCAL_JOBS = {'s': 'a', 's/m': 'b', 't': 'd'}
+
+
 class StubJenkins(jenkins.Jenkins):
 
     def __init__(self, jobs: List[Dict[str, Any]], config: str) -> None:
@@ -18,10 +22,6 @@ class StubJenkins(jenkins.Jenkins):
 
     def get_job_config(self, job: str) -> str:
         return f'{job}-{self.config}'
-
-
-SERVER_JOBS = {'s': 'a', 's/n': 'b', 't': 'c'}
-LOCAL_JOBS = {'s': 'a', 's/m': 'b', 't': 'd'}
 
 
 def test_write_jobs_to_filesystem(tmp_path: Path) -> None:
@@ -44,7 +44,11 @@ def test_get_server_jobs() -> None:
         config=conf,
     )
     jobs = cli.get_server_jobs(server)
-    assert jobs == {'a': f'a-{conf}', 'a/b': f'a/b-{conf}', 'c': f'c-{conf}'}
+    assert jobs == {
+        'a': f'a-{conf}',
+        'a/b': f'a/b-{conf}',
+        'c': f'c-{conf}',
+    }
 
 
 def test_compare_jobs() -> None:
