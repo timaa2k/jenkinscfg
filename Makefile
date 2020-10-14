@@ -1,4 +1,4 @@
-.PHONY: lint test help
+.PHONY: lint test test.unit test.integration help
 
 .DEFAULT: all
 
@@ -12,8 +12,18 @@ lint:
 test:
 	pytest -s -vvv
 
+test.unit:
+	pytest -s -vvv tests/test_unit.py
+
+test.integration:
+	pytest -s -vvv tests/test_integration.py
+
 help:
 	@echo "make lint"
 	@echo "  run pylint and mypy"
 	@echo "make test"
-	@echo "  run tests"
+	@echo "  run all tests"
+	@echo "make test.unit"
+	@echo "  run only unit tests"
+	@echo "make test.integration"
+	@echo "  run only integration tests"
