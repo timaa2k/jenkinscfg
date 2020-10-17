@@ -5,36 +5,36 @@ import click.testing
 import docker
 import pytest
 import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
 
 from jenkinscfg import cli
 
 
 LOCALHOST = '127.0.0.1'
-DEFAULT_TIMEOUT = (3.05, 27) # seconds
+DEFAULT_TIMEOUT = (3.05, 27)  # Seconds.
 
 
-class TimeoutHTTPAdapter(HTTPAdapter):
-    def __init__(self, *args, **kwargs):
+class TimeoutHTTPAdapter(requests.adapters.HTTPAdapter):
+
+    def __init__(self, *args, **kwargs) -> None:  # type: ignore
         self.timeout = DEFAULT_TIMEOUT
-        if "timeout" in kwargs:
-            self.timeout = kwargs["timeout"]
-            del kwargs["timeout"]
+        if 'timeout' in kwargs:
+            self.timeout = kwargs['timeout']
+            del kwargs['timeout']
         super().__init__(*args, **kwargs)
 
-    def send(self, request, **kwargs):
-        timeout = kwargs.get("timeout")
+    def send(self, request, **kwargs) -> requests.Response:  # type: ignore
+        timeout = kwargs.get('timeout')
         if timeout is None:
-            kwargs["timeout"] = self.timeout
+            kwargs['timeout'] = self.timeout
         return super().send(request, **kwargs)
 
 
-def http_retry_session():
+def http_retry_session() -> requests.Session:
     http = requests.Session()
-    retries = Retry(
+    retries = requests.packages.urllib3.util.retry.Retry(
         total=10,
-        backoff_factor=1, # yields 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256 seconds.
+        # Yields 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256 seconds.
+        backoff_factor=1,
         status_forcelist=[429, 500, 502, 503, 504],
         method_whitelist=['HEAD', 'GET', 'OPTIONS'],
     )
@@ -45,7 +45,7 @@ def http_retry_session():
 
 
 @pytest.fixture(scope='session')
-def jenkins_server():
+def jenkins_server() -> docker.models.Container:
     docker_client = docker.from_env()
     jenkins_image, _ = docker_client.images.build(
         path='tests/artifacts/docker/',
@@ -65,7 +65,10 @@ def jenkins_server():
         jenkins_container.remove(force=True)
 
 
-def test_diff_cmd(jenkins_server, tmp_path: Path,) -> None:
+def test_diff_cmd(
+    jenkins_server: docker.models.Container,
+    tmp_path: Path,
+) -> None:
     jobs_path = tmp_path / 'jobs'
     shutil.copytree(Path('tests/artifacts/jobs'), jobs_path)
     runner = click.testing.CliRunner()
