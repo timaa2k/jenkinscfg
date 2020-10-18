@@ -1,2 +1,1 @@
-click==7.1.2
-python-jenkins==1.7.0
+.

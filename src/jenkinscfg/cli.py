@@ -7,11 +7,14 @@ import click
 import jenkins
 from click.core import Context
 
+from . import __version__
+
 
 @click.group()
 @click.option('-h', '--host', type=str, default='http://localhost:8080')
 @click.option('-u', '--username', type=str, default='admin')
 @click.option('-p', '--password', type=str, default='admin')
+@click.version_option(version=__version__)
 @click.pass_context
 def cli(ctx: Context, host: str, username: str, password: str) -> None:
     host = str(os.getenv('JENKINS_HOST', host))

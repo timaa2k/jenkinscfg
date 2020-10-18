@@ -1,21 +1,27 @@
 import pathlib
-import pkg_resources
 import setuptools
-from typing import List
 
 
-with pathlib.Path('requirements.txt').open() as requirements_txt:
-    INSTALL_REQUIRES = [
-        str(requirement)
-        for requirement
-        in pkg_resources.parse_requirements(requirements_txt)
-    ]
+INSTALL_REQUIRES = [
+    'click==7.1.2',
+    'python-jenkins==1.7.0',
+]
+
+DEV_REQUIRES = [
+    'docker==4.3.1',
+    'flake8==3.8.4',
+    'mypy==0.790',
+    'pre-commit==2.7.1',
+    'pytest==6.1.1',
+    'requests==2.24.0',
+    'setuptools==50.3.2',
+    'wheel==0.35.1',
+]
 
 LONG_DESCRIPTION = pathlib.Path('README.rst').read_text()
 
 setuptools.setup(
     name='jenkinscfg',
-    version='0.1.0a1',
     author='Tim Weidner',
     author_email='timaa2k@gmail.com',
     description='Declarative Jenkins Jobs Configuration',
@@ -26,9 +32,8 @@ setuptools.setup(
     packages=setuptools.find_packages(where='src'),
     package_dir={'': 'src'},
     zip_safe=False,
-    install_requires=INSTALL_REQUIRES,
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
@@ -39,6 +44,10 @@ setuptools.setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
     ],
+    install_requires=INSTALL_REQUIRES,
+    extras_require={
+        'dev': DEV_REQUIRES,
+    },
     dependency_links=[],
     entry_points={
         'console_scripts': [
