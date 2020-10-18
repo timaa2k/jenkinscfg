@@ -1,14 +1,16 @@
 jenkinscfg
 ==========
 
-Update Jenkins job configuration declaratively from a Git repository.
+Update Jenkins jobs configuration declaratively from a Git repository.
 
-Think kubecfg for Jenkins
--------------------------
+Example
+-------
 
 .. code-block:: bash
 
    $ export JENKINS_HOST=http://localhost:8080
+
+.. code-block:: bash
 
    $ tree jobs
    jobs
@@ -17,11 +19,17 @@ Think kubecfg for Jenkins
       └── HelloWorldJob
          └── config.xml
 
+.. code-block:: bash
+
    $ jenkinscfg update jobs
    Creating HelloWorldJobFolder
    Creating HelloWorldJobFolder/HelloWorldJob
 
+.. code-block:: bash
+
    $ mv jobs/HelloWorldJobFolder jobs/NewJobFolder
+
+.. code-block:: bash
 
    $ jenkinscfg diff jobs
    Removed   HelloWorldJobFolder
@@ -29,13 +37,19 @@ Think kubecfg for Jenkins
    Added     NewJobFolder
    Added     NewJobFolder/HelloWorldJob
 
+.. code-block:: bash
+
    $ jenkinscfg update jobs
    Deleting HelloWorldJobFolder/HelloWorldJob
    Deleting HelloWorldJobFolder
    Creating NewJobFolder
    Creating NewJobFolder/HelloWorldJob
 
+.. code-block:: bash
+
    $ sed -i 's/false/true/' jobs/NewJobFolder/HelloWorldJob/config.xml
+
+.. code-block:: bash
 
    $ jenkinscfg diff jobs
    Changed   NewJobFolder/HelloWorldJob
@@ -60,6 +74,8 @@ Think kubecfg for Jenkins
       <buildWrappers/>
 
    Unchanged NewJobFolder
+
+.. code-block:: bash
 
    $ jenkinscfg update jobs
    Updating NewJobFolder/HelloWorldJob
