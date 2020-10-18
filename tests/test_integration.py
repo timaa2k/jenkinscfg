@@ -1,8 +1,9 @@
-import shutil
+import textwrap
 from pathlib import Path
 
 import click.testing
 import docker
+import jenkins
 import pytest
 import requests
 
@@ -45,33 +46,86 @@ def http_retry_session() -> requests.Session:
 
 
 @pytest.fixture(scope='session')
-def jenkins_server() -> docker.models.Container:
+def jenkins_server() -> 'docker.models.Container':
     docker_client = docker.from_env()
     jenkins_image, _ = docker_client.images.build(
         path='tests/artifacts/docker/',
         dockerfile='jenkins.dockerfile',
         tag='jenkins:jenkinscfg_integration_test',
     )
+    jenkins_container = docker_client.containers.run(
+        image=jenkins_image,
+        detach=True,
+        ports={'8080/tcp': (LOCALHOST, 8080)},
+    )
     try:
-        jenkins_container = docker_client.containers.run(
-            image=jenkins_image,
-            detach=True,
-            ports={'8080/tcp': (LOCALHOST, 8080)},
-        )
-        http = http_retry_session()
-        http.get(f'http://{LOCALHOST}:8080')
+        http_retry_session().get(f'http://{LOCALHOST}:8080')
         yield jenkins_container
     finally:
         jenkins_container.remove(force=True)
 
 
-def test_diff_cmd(
-    jenkins_server: docker.models.Container,
+@pytest.fixture(scope='function')
+def empty_jenkins_server(
+    jenkins_server: 'docker.models.Container',
+    tmp_path: Path,
+) -> 'docker.models.Container':
+    # Empty path update to clean all jobs.
+    jenkinscfg('update', tmp_path)
+    yield jenkins_server
+
+
+def jenkinscfg(command: str, path: Path) -> str:
+    runner = click.testing.CliRunner()
+    result = runner.invoke(cli.cli, [command, str(path)])
+    assert result.exit_code == 0
+    return result.output
+
+
+def local_jenkins_job(path: Path) -> None:
+    Path(path).mkdir()
+    Path(path / 'config.xml').write_text(jenkins.EMPTY_CONFIG_XML)
+
+
+def local_jenkins_dir(path: Path) -> None:
+    Path(path).mkdir()
+    Path(path / 'config.xml').write_text(jenkins.EMPTY_FOLDER_XML)
+
+
+def test_add_job(
+    empty_jenkins_server: 'docker.models.Container',
     tmp_path: Path,
 ) -> None:
-    jobs_path = tmp_path / 'jobs'
-    shutil.copytree(Path('tests/artifacts/jobs'), jobs_path)
-    runner = click.testing.CliRunner()
-    res = runner.invoke(cli.cli, ['diff', str(jobs_path)])
-    assert res.exit_code == 0
-    assert 'HelloWorldFolder/NestedHelloWorldFolder/HelloWorldJob' in res.output
+    local_jenkins_job(tmp_path / 'DemoJob')
+
+    assert jenkinscfg('diff', tmp_path) == textwrap.dedent(
+        """\
+        Added     DemoJob
+        """
+    )
+    assert jenkinscfg('update', tmp_path) == textwrap.dedent(
+        """\
+        Creating DemoJob
+        """
+    )
+
+
+def test_add_nested_job(
+    empty_jenkins_server: 'docker.models.Container',
+    tmp_path: Path,
+) -> None:
+    local_jenkins_dir(tmp_path / 'DemoJobFolder')
+    local_jenkins_job(tmp_path / 'DemoJobFolder' / 'DemoJob')
+
+    assert jenkinscfg('diff', tmp_path) == textwrap.dedent(
+        """\
+        Added     DemoJobFolder
+        Added     DemoJobFolder/DemoJob
+        """
+    )
+    assert jenkinscfg('update', tmp_path) == textwrap.dedent(
+        """\
+        Creating DemoJobFolder
+        Creating DemoJobFolder/DemoJob
+        """
+    )
