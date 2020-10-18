@@ -56,8 +56,8 @@ def dump(server: jenkins.Jenkins, jobs_path: Path) -> None:
 
 def write_jobs_to_filesystem(jobs: Dict[str, str], path: Path) -> None:
     for job in sorted(jobs.keys()):
-        Path(path / job).mkdir(exist_ok=True)
-        Path(path / job / 'config.xml').write_text(jobs[job])
+        Path(path / Path(job)).mkdir(exist_ok=True)
+        Path(path / Path(job) / 'config.xml').write_text(jobs[job])
 
 
 def get_local_jobs(jobs_path: Path) -> Dict[str, str]:
