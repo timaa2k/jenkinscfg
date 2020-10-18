@@ -3,6 +3,15 @@ jenkinscfg
 
 Update Jenkins jobs configuration declaratively from a Git repository.
 
+
+Installation
+------------
+
+.. code-block:: bash
+
+   $ pip install jenkinscfg
+
+
 Example
 -------
 
