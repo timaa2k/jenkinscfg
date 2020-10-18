@@ -140,15 +140,15 @@ def apply_update(
     dry_run: bool,
 ) -> None:
     for job in sorted(removed, reverse=True):
-        print('Deleting ' + job + ('' if not dry_run else '(dry-run)'))
+        print('Deleting ' + job + ('' if not dry_run else ' (dry-run)'))
         if not dry_run:
             server.delete_job(job)
     for job in sorted(changed):
-        print('Updating ' + job + ('' if not dry_run else '(dry-run)'))
+        print('Updating ' + job + ('' if not dry_run else ' (dry-run)'))
         if not dry_run:
             server.reconfig_job(job, local_jobs[job])
     for job in sorted(added):
-        print('Creating ' + job + ('' if not dry_run else '(dry-run)'))
+        print('Creating ' + job + ('' if not dry_run else ' (dry-run)'))
         if not dry_run:
             server.create_job(job, local_jobs[job])
 
