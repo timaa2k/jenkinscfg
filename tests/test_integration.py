@@ -12,6 +12,7 @@ from jenkinscfg import cli
 
 LOCALHOST = '127.0.0.1'
 DEFAULT_TIMEOUT = (3.05, 27)  # Seconds.
+SUPPORTED_CHARS = '_-+ \'"'   # Special characters in a job or folder name.
 
 
 class TimeoutHTTPAdapter(requests.adapters.HTTPAdapter):
@@ -119,7 +120,7 @@ def local_jenkins_dir(path: Path) -> None:
     Path(path / 'config.xml').write_text(empty_folder_xml)
 
 
-@pytest.mark.parametrize('job', ['TestJob', 'Test Job'])
+@pytest.mark.parametrize('job', ['TestJob', SUPPORTED_CHARS])
 def test_add_job(
     empty_jenkins_server: 'docker.models.Container',
     tmp_path: Path,
@@ -143,8 +144,8 @@ def test_add_job(
     )
 
 
-@pytest.mark.parametrize('folder', ['TestJobFolder', 'Test JobFolder'])
-@pytest.mark.parametrize('job', ['TestJob', 'Test Job'])
+@pytest.mark.parametrize('folder', ['TestJobFolder', SUPPORTED_CHARS])
+@pytest.mark.parametrize('job', ['TestJob', SUPPORTED_CHARS])
 def test_add_nested_job(
     empty_jenkins_server: 'docker.models.Container',
     tmp_path: Path,
@@ -173,8 +174,8 @@ def test_add_nested_job(
     )
 
 
-@pytest.mark.parametrize('folder', ['TestJobFolder', 'Test JobFolder'])
-@pytest.mark.parametrize('job', ['TestJob', 'Test Job'])
+@pytest.mark.parametrize('folder', ['TestJobFolder', SUPPORTED_CHARS])
+@pytest.mark.parametrize('job', ['TestJob', SUPPORTED_CHARS])
 def test_dump_jobs(
     empty_jenkins_server: 'docker.models.Container',
     tmp_path: Path,
@@ -182,16 +183,20 @@ def test_dump_jobs(
     job: str,
 ) -> None:
     original = tmp_path / 'original'
-    Path(original / folder).mkdir(parents=True)
-    local_jenkins_dir(original / folder)
-    local_jenkins_job(original / folder / job)
+    original.mkdir()
+    original_folder = original / folder
+    local_jenkins_dir(original_folder)
+    original_job = original_folder / job
+    local_jenkins_job(original_job)
     jenkinscfg('update', original)
     dumped = tmp_path / 'dumped'
-    Path(dumped / folder).mkdir(parents=True)
+    dumped.mkdir()
+    dumped_folder = dumped / folder
+    dumped_job = dumped_folder / job
     assert jenkinscfg('dump', dumped) == ''
-    original = Path(original / folder / job / 'config.xml').read_text()
-    dump = Path(dumped / folder / job / 'config.xml').read_text()
-    assert dump == original
+    original_conf = Path(original_job / 'config.xml').read_text()
+    dumped_conf = Path(dumped_job / 'config.xml').read_text()
+    assert dumped_conf == original_conf
     assert jenkinscfg('diff', dumped) == textwrap.dedent(
         f"""\
         Unchanged {folder}
@@ -200,36 +205,67 @@ def test_dump_jobs(
     )
 
 
+@pytest.mark.parametrize('folder', ['TestJobFolder', SUPPORTED_CHARS])
+@pytest.mark.parametrize('job', ['TestJob', SUPPORTED_CHARS])
 def test_unchanged_job(
     empty_jenkins_server: 'docker.models.Container',
     tmp_path: Path,
+    folder: str,
+    job: str,
 ) -> None:
-    local_jenkins_job(tmp_path / 'TestJob')
+    folder_path = tmp_path / folder
+    local_jenkins_dir(folder_path)
+    local_jenkins_job(folder_path / job)
     jenkinscfg('update', tmp_path)
     assert jenkinscfg('diff', tmp_path) == textwrap.dedent(
-        """\
-        Unchanged TestJob
+        f"""\
+        Unchanged {folder}
+        Unchanged {folder}/{job}
         """
     )
     assert jenkinscfg('update', tmp_path) == ''
 
 
+@pytest.mark.parametrize('folder', ['TestJobFolder', SUPPORTED_CHARS])
+@pytest.mark.parametrize('job', ['TestJob', SUPPORTED_CHARS])
 def test_changed_job(
     empty_jenkins_server: 'docker.models.Container',
     tmp_path: Path,
+    folder: str,
+    job: str,
 ) -> None:
-    job = tmp_path / 'TestJob'
-    local_jenkins_job(job)
+    folder_path = tmp_path / folder
+    local_jenkins_dir(folder_path)
+    local_jenkins_job(folder_path / job)
     jenkinscfg('update', tmp_path)
-    config = Path(job / 'config.xml').read_text()
+    config = Path(folder_path / 'config.xml').read_text()
+    new_config = config.replace(
+        '<description/>',
+        '<description>A folder.</description>',
+    )
+    Path(folder_path / 'config.xml').write_text(new_config)
+    job_path = folder_path / job
+    config = Path(job_path / 'config.xml').read_text()
     new_config = config.replace(
         '<disabled>false</disabled>',
         '<disabled>true</disabled>',
     )
-    Path(job / 'config.xml').write_text(new_config)
+    Path(job_path / 'config.xml').write_text(new_config)
     assert jenkinscfg('diff', tmp_path) == textwrap.dedent(
-        """\
-        Changed   TestJob
+        f"""\
+        Changed   {folder}
+        --- 
+        +++ 
+        @@ -1,6 +1,6 @@
+         <?xml version="1.0" encoding="UTF-8"?><com.cloudbees.hudson.plugins.folder.Folder plugin="cloudbees-folder@6.1.2">
+           <actions/>
+        -  <description/>
+        +  <description>A folder.</description>
+           <properties/>
+           <folderViews/>
+           <healthMetrics/>
+
+        Changed   {folder}/{job}
         --- 
         +++ 
         @@ -3,7 +3,7 @@
@@ -242,16 +278,17 @@ def test_changed_job(
            <triggers class="vector"/>
            <concurrentBuild>false</concurrentBuild>
 
-        """  # noqa: W291
+        """  # noqa: W291,E501
     )
     assert jenkinscfg('update', tmp_path) == textwrap.dedent(
-        """\
-        Updating TestJob
+        f"""\
+        Updating {folder}
+        Updating {folder}/{job}
         """
     )
 
 
-@pytest.mark.parametrize('job', ['TestJob', 'Test Job'])
+@pytest.mark.parametrize('job', ['TestJob', SUPPORTED_CHARS])
 def test_remove_job(
     empty_jenkins_server: 'docker.models.Container',
     tmp_path: Path,
@@ -272,8 +309,8 @@ def test_remove_job(
     )
 
 
-@pytest.mark.parametrize('folder', ['TestJobFolder', 'Test JobFolder'])
-@pytest.mark.parametrize('job', ['TestJob', 'Test Job'])
+@pytest.mark.parametrize('folder', ['TestJobFolder', SUPPORTED_CHARS])
+@pytest.mark.parametrize('job', ['TestJob', SUPPORTED_CHARS])
 def test_remove_nested_job(
     empty_jenkins_server: 'docker.models.Container',
     tmp_path: Path,
