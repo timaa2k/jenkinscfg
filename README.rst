@@ -1,63 +1,65 @@
 jenkinscfg
 ==========
 
+Update Jenkins job configuration declaratively from a Git repository.
 
-Prerequisites
--------------
-
-- Python 3.8
-
-.. code-block:: bash
-
-   python3 --version
-
-
-Setup
------
-
-1) Create virtual environment
+Think kubecfg for Jenkins
+-------------------------
 
 .. code-block:: bash
 
-   mkdir -p ~/.virtualenv
-   python3 -m venv ~/.virtualenv/jenkinscfg
+   $ export JENKINS_HOST=http://localhost:8080
 
-2) Activate virtual environment
+   $ tree jobs
+   jobs
+   └── HelloWorldJobFolder
+      ├── config.xml
+      └── HelloWorldJob
+         └── config.xml
 
-.. code-block:: bash
+   $ jenkinscfg update jobs
+   Creating HelloWorldJobFolder
+   Creating HelloWorldJobFolder/HelloWorldJob
 
-   source ~/.virtualenv/jenkinscfg/bin/activate
+   $ mv jobs/HelloWorldJobFolder jobs/NewJobFolder
 
-3) Install Python packages required for development
+   $ jenkinscfg diff jobs
+   Removed   HelloWorldJobFolder
+   Removed   HelloWorldJobFolder/HelloWorldJob
+   Added     NewJobFolder
+   Added     NewJobFolder/HelloWorldJob
 
-Only do this while the virtual environment is active.
+   $ jenkinscfg update jobs
+   Deleting HelloWorldJobFolder/HelloWorldJob
+   Deleting HelloWorldJobFolder
+   Creating NewJobFolder
+   Creating NewJobFolder/HelloWorldJob
 
-.. code-block:: bash
+   $ sed -i 's/false/true/' jobs/NewJobFolder/HelloWorldJob/config.xml
 
-   pip install -e '.[dev]'
+   $ jenkinscfg diff jobs
+   Changed   NewJobFolder/HelloWorldJob
+   ---
+   +++
+   @@ -1,12 +1,12 @@
+    <?xml version="1.0" encoding="UTF-8"?><project>
+   -  <keepDependencies>false</keepDependencies>
+   +  <keepDependencies>true</keepDependencies>
+      <properties/>
+      <scm class="jenkins.scm.NullSCM"/>
+      <canRoam>true</canRoam>
+   -  <disabled>false</disabled>
+   -  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+   +  <disabled>true</disabled>
+   +  <blockBuildWhenUpstreamBuilding>true</blockBuildWhenUpstreamBuilding>
+      <triggers class="vector"/>
+   -  <concurrentBuild>false</concurrentBuild>
+   +  <concurrentBuild>true</concurrentBuild>
+      <builders/>
+      <publishers/>
+      <buildWrappers/>
 
+   Unchanged NewJobFolder
 
-Lint
-----
-
-Perform a linter check via:
-
-.. code-block:: bash
-
-   make lint
-
-
-Test
-----
-
-Perform a test run via:
-
-.. code-block:: bash
-
-   make test
-
-To run a particular test run the following and put in the test name:
-
-.. code-block:: bash
-
-   pytest -s -vvv -k 'TestGroup and test_function'
+   $ jenkinscfg update jobs
+   Updating NewJobFolder/HelloWorldJob
