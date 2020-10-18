@@ -1,7 +1,7 @@
 FROM jenkins/jenkins:lts
 
-ENV JENKINS_USER admin
-ENV JENKINS_PASS admin
+ENV JENKINS_USER integration_test
+ENV JENKINS_PASS integration_test
 
 ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false -Dhudson.security.csrf.DefaultCrumbIssuer.EXCLUDE_SESSION_ID=true"
 

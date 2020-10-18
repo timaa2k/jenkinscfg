@@ -8,17 +8,15 @@ import jenkins
 from click.core import Context
 
 
-JENKINS_HOST = str(os.getenv('JENKINS_HOST', 'http://localhost:8080'))
-JENKINS_USERNAME = str(os.getenv('JENKINS_USERNAME', 'admin'))
-JENKINS_PASSWORD = str(os.getenv('JENKINS_PASSWORD', 'admin'))
-
-
 @click.group()
-@click.option('-h', '--host', type=str, default=JENKINS_HOST)
-@click.option('-u', '--username', type=str, default=JENKINS_USERNAME)
-@click.option('-p', '--password', type=str, default=JENKINS_PASSWORD)
+@click.option('-h', '--host', type=str, default='http://localhost:8080')
+@click.option('-u', '--username', type=str, default='admin')
+@click.option('-p', '--password', type=str, default='admin')
 @click.pass_context
 def cli(ctx: Context, host: str, username: str, password: str) -> None:
+    host = str(os.getenv('JENKINS_HOST', host))
+    username = str(os.getenv('JENKINS_USERNAME', username))
+    password = str(os.getenv('JENKINS_PASSWORD', password))
     ctx.obj = jenkins.Jenkins(host, username=username, password=password)
 
 

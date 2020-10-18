@@ -10,15 +10,20 @@ import requests
 from jenkinscfg import cli
 
 
-LOCALHOST = '127.0.0.1'
-DEFAULT_TIMEOUT = (3.05, 27)  # Seconds.
-SUPPORTED_CHARS = '_-+ \'"'   # Special characters in a job or folder name.
+JENKINS_HOSTNAME = '127.0.0.1'
+JENKINS_PORT = 8080
+JENKINS_HOST = f'http://{JENKINS_HOSTNAME}:{JENKINS_PORT}'
+JENKINS_USERNAME = 'integration_test'
+JENKINS_PASSWORD = 'integration_test'
+
+SUPPORTED_CHARS = '_-+ \'"'        # Special characters in a job or folder name.
+DEFAULT_HTTP_TIMEOUT = (3.05, 27)  # (Connection timeout, Read timeout) seconds.
 
 
 class TimeoutHTTPAdapter(requests.adapters.HTTPAdapter):
 
     def __init__(self, *args, **kwargs) -> None:  # type: ignore
-        self.timeout = DEFAULT_TIMEOUT
+        self.timeout = DEFAULT_HTTP_TIMEOUT
         if 'timeout' in kwargs:
             self.timeout = kwargs['timeout']
             del kwargs['timeout']
@@ -57,10 +62,10 @@ def jenkins_server() -> 'docker.models.Container':
     jenkins_container = docker_client.containers.run(
         image=jenkins_image,
         detach=True,
-        ports={'8080/tcp': (LOCALHOST, 8080)},
+        ports={f'{JENKINS_PORT}/tcp': (JENKINS_HOSTNAME, JENKINS_PORT)},
     )
     try:
-        http_retry_session().get(f'http://{LOCALHOST}:8080')
+        http_retry_session().get(JENKINS_HOST)
         yield jenkins_container
     finally:
         jenkins_container.remove(force=True)
@@ -78,7 +83,12 @@ def empty_jenkins_server(
 
 def jenkinscfg(command: str, path: Path) -> str:
     runner = click.testing.CliRunner()
-    result = runner.invoke(cli.cli, [command, str(path)])
+    env = {
+        'JENKINS_HOST': JENKINS_HOST,
+        'JENKINS_USERNAME': JENKINS_USERNAME,
+        'JENKINS_PASSWORD': JENKINS_PASSWORD,
+    }
+    result = runner.invoke(cli.cli, [command, str(path)], env=env)
     if result.exit_code != 0 and result.exception is not None:
         raise result.exception
     return result.output
