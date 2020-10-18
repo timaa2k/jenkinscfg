@@ -24,13 +24,13 @@ DEV_REQUIRES = _get_dependencies(
 LONG_DESCRIPTION = pathlib.Path('README.rst').read_text()
 
 setuptools.setup(
-    name="jenkinscfg",
-    version="0.1.0",
-    author="Tim Weidner",
-    description="Declarative Jenkins Job Configuration",
+    name='jenkinscfg',
+    version='0.1.0',
+    author='Tim Weidner',
+    description='Declarative Jenkins Jobs Configuration',
     long_description=LONG_DESCRIPTION,
-    long_description_content_type="text/x-rst",
-    url="https://github.com/timaa2k/jenkinscfg",
+    long_description_content_type='text/x-rst',
+    url='https://github.com/timaa2k/jenkinscfg',
     include_package_data=True,
     packages=setuptools.find_packages(where='src'),
     package_dir={'': 'src'},
@@ -40,9 +40,14 @@ setuptools.setup(
         'dev': DEV_REQUIRES,
     },
     classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: GPLv3 License",
-        "Operating System :: OS Independent",
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'License :: OSI Approved :: GPLv3 License',
+        'Operating System :: OS Independent',
     ],
     dependency_links=[],
 )
