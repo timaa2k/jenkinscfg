@@ -12,12 +12,36 @@ Installation
    $ pip install jenkinscfg
 
 
+Usage
+-----
+
+.. code-block:: bash
+
+   Usage: jenkinscfg [OPTIONS] COMMAND [ARGS]...
+
+   Options:
+     -h, --host TEXT
+     -u, --username TEXT
+     -p, --password TEXT
+     --version            Show the version and exit.
+     --help               Show this message and exit.
+
+   Commands:
+     diff
+     dump
+     update
+
+
 Example
 -------
 
 .. code-block:: bash
 
    $ export JENKINS_HOST=http://localhost:8080
+
+.. code-block:: bash
+
+   $ jenkinscfg dump jobs
 
 .. code-block:: bash
 
