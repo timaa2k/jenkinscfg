@@ -84,7 +84,7 @@ def jenkinscfg(command: str, path: Path) -> str:
 
 
 def local_jenkins_job(path: Path) -> None:
-    Path(path).mkdir()
+    Path(path).mkdir(exist_ok=True)
     empty_job_xml = textwrap.dedent(
         """\
         <?xml version="1.0" encoding="UTF-8"?><project>
@@ -105,7 +105,7 @@ def local_jenkins_job(path: Path) -> None:
 
 
 def local_jenkins_dir(path: Path) -> None:
-    Path(path).mkdir()
+    Path(path).mkdir(exist_ok=True)
     empty_folder_xml = textwrap.dedent(
         """\
         <?xml version="1.0" encoding="UTF-8"?><com.cloudbees.hudson.plugins.folder.Folder plugin="cloudbees-folder@6.1.2">
@@ -143,44 +143,59 @@ def test_add_job(
     )
 
 
+@pytest.mark.parametrize('folder', ['TestJobFolder', 'Test JobFolder'])
+@pytest.mark.parametrize('job', ['TestJob', 'Test Job'])
 def test_add_nested_job(
     empty_jenkins_server: 'docker.models.Container',
     tmp_path: Path,
+    folder: str,
+    job: str,
 ) -> None:
-    local_jenkins_dir(tmp_path / 'TestJobFolder')
-    local_jenkins_job(tmp_path / 'TestJobFolder' / 'TestJob')
+    local_jenkins_dir(tmp_path / folder)
+    local_jenkins_job(tmp_path / folder / job)
     assert jenkinscfg('diff', tmp_path) == textwrap.dedent(
-        """\
-        Added     TestJobFolder
-        Added     TestJobFolder/TestJob
+        f"""\
+        Added     {folder}
+        Added     {folder}/{job}
         """
     )
     assert jenkinscfg('update', tmp_path) == textwrap.dedent(
-        """\
-        Creating TestJobFolder
-        Creating TestJobFolder/TestJob
+        f"""\
+        Creating {folder}
+        Creating {folder}/{job}
+        """
+    )
+    assert jenkinscfg('diff', tmp_path) == textwrap.dedent(
+        f"""\
+        Unchanged {folder}
+        Unchanged {folder}/{job}
         """
     )
 
 
-def test_dump_job(
+@pytest.mark.parametrize('folder', ['TestJobFolder', 'Test JobFolder'])
+@pytest.mark.parametrize('job', ['TestJob', 'Test Job'])
+def test_dump_jobs(
     empty_jenkins_server: 'docker.models.Container',
     tmp_path: Path,
+    folder: str,
+    job: str,
 ) -> None:
-    job = 'TestJob'
-    original_jobs = tmp_path / 'original'
-    original_jobs.mkdir()
-    local_jenkins_job(original_jobs / job)
-    jenkinscfg('update', original_jobs)
-    dumped_jobs = tmp_path / 'dumped'
-    dumped_jobs.mkdir()
-    assert jenkinscfg('dump', dumped_jobs) == ''
-    original = Path(original_jobs / job / 'config.xml').read_text()
-    dump = Path(dumped_jobs / job / 'config.xml').read_text()
+    original = tmp_path / 'original'
+    Path(original / folder).mkdir(parents=True)
+    local_jenkins_dir(original / folder)
+    local_jenkins_job(original / folder / job)
+    jenkinscfg('update', original)
+    dumped = tmp_path / 'dumped'
+    Path(dumped / folder).mkdir(parents=True)
+    assert jenkinscfg('dump', dumped) == ''
+    original = Path(original / folder / job / 'config.xml').read_text()
+    dump = Path(dumped / folder / job / 'config.xml').read_text()
     assert dump == original
-    assert jenkinscfg('diff', dumped_jobs) == textwrap.dedent(
-        """\
-        Unchanged TestJob
+    assert jenkinscfg('diff', dumped) == textwrap.dedent(
+        f"""\
+        Unchanged {folder}
+        Unchanged {folder}/{job}
         """
     )
 
@@ -236,44 +251,48 @@ def test_changed_job(
     )
 
 
+@pytest.mark.parametrize('job', ['TestJob', 'Test Job'])
 def test_remove_job(
     empty_jenkins_server: 'docker.models.Container',
     tmp_path: Path,
+    job: str,
 ) -> None:
-    test_job = tmp_path / 'TestJob'
-    local_jenkins_job(test_job)
+    local_jenkins_job(tmp_path / job)
     jenkinscfg('update', tmp_path)
-    shutil.rmtree(test_job)
+    shutil.rmtree(tmp_path / job)
     assert jenkinscfg('diff', tmp_path) == textwrap.dedent(
-        """\
-        Removed   TestJob
+        f"""\
+        Removed   {job}
         """
     )
     assert jenkinscfg('update', tmp_path) == textwrap.dedent(
-        """\
-        Deleting TestJob
+        f"""\
+        Deleting {job}
         """
     )
 
 
+@pytest.mark.parametrize('folder', ['TestJobFolder', 'Test JobFolder'])
+@pytest.mark.parametrize('job', ['TestJob', 'Test Job'])
 def test_remove_nested_job(
     empty_jenkins_server: 'docker.models.Container',
     tmp_path: Path,
+    folder: str,
+    job: str,
 ) -> None:
-    test_folder = tmp_path / 'TestJobFolder'
-    local_jenkins_dir(test_folder)
-    local_jenkins_job(test_folder / 'TestJob')
+    local_jenkins_dir(tmp_path / folder)
+    local_jenkins_job(tmp_path / folder / job)
     jenkinscfg('update', tmp_path)
-    shutil.rmtree(test_folder)
+    shutil.rmtree(tmp_path / folder)
     assert jenkinscfg('diff', tmp_path) == textwrap.dedent(
-        """\
-        Removed   TestJobFolder
-        Removed   TestJobFolder/TestJob
+        f"""\
+        Removed   {folder}
+        Removed   {folder}/{job}
         """
     )
     assert jenkinscfg('update', tmp_path) == textwrap.dedent(
-        """\
-        Deleting TestJobFolder/TestJob
-        Deleting TestJobFolder
+        f"""\
+        Deleting {folder}/{job}
+        Deleting {folder}
         """
     )
