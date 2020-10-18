@@ -37,7 +37,7 @@ Example
 
 .. code-block:: bash
 
-   $ export JENKINS_HOST=http://localhost:8080
+   $ export JENKINS_HOST=http://old.leeroy.jenkins:8080
 
 .. code-block:: bash
 
@@ -51,6 +51,10 @@ Example
       ├── config.xml
       └── HelloWorldJob
          └── config.xml
+
+.. code-block:: bash
+
+   $ export JENKINS_HOST=http://new.better.jenkins:8080
 
 .. code-block:: bash
 
