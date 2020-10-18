@@ -119,19 +119,26 @@ def local_jenkins_dir(path: Path) -> None:
     Path(path / 'config.xml').write_text(empty_folder_xml)
 
 
+@pytest.mark.parametrize('job', ['TestJob', 'Test Job'])
 def test_add_job(
     empty_jenkins_server: 'docker.models.Container',
     tmp_path: Path,
+    job: str,
 ) -> None:
-    local_jenkins_job(tmp_path / 'TestJob')
+    local_jenkins_job(tmp_path / job)
     assert jenkinscfg('diff', tmp_path) == textwrap.dedent(
-        """\
-        Added     TestJob
+        f"""\
+        Added     {job}
         """
     )
     assert jenkinscfg('update', tmp_path) == textwrap.dedent(
-        """\
-        Creating TestJob
+        f"""\
+        Creating {job}
+        """
+    )
+    assert jenkinscfg('diff', tmp_path) == textwrap.dedent(
+        f"""\
+        Unchanged {job}
         """
     )
 
@@ -171,6 +178,11 @@ def test_dump_job(
     original = Path(original_jobs / job / 'config.xml').read_text()
     dump = Path(dumped_jobs / job / 'config.xml').read_text()
     assert dump == original
+    assert jenkinscfg('diff', dumped_jobs) == textwrap.dedent(
+        """\
+        Unchanged TestJob
+        """
+    )
 
 
 def test_unchanged_job(
